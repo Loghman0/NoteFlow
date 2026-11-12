@@ -1,0 +1,42 @@
+{
+    "env": {
+        "browser": true,
+        "es2022": true,
+        "node": true,
+        "jest": true
+    },
+    "parserOptions": {
+        "ecmaVersion": 2022,
+        "sourceType": "module"
+    },
+    "rules": {
+        "no-unused-vars": [
+            "error",
+            {
+                "argsIgnorePattern": "^_"
+            }
+        ],
+        "no-undef": "error",
+        "no-dupe-keys": "error",
+        "no-unreachable": "error",
+        "no-constant-condition": "error",
+        "prefer-const": "warn",
+        "no-var": "warn",
+        "eqeqeq": [
+            "warn",
+            "always",
+            {
+                "null": "ignore"
+            }
+        ],
+        "semi": [
+            "warn",
+            "always"
+        ],
+        "no-trailing-spaces": "warn"
+    },
+    "ignorePatterns": [
+        "node_modules/",
+        "coverage/"
+    ]
+}

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyNotes AI - Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            background: #F9FAFB;
+        }
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }
+        h1 { color: #4F46E5; }
+        h2 { color: #111827; margin-top: 1.5rem; }
+        .feature { margin: 1rem 0; }
+        code { background: #F3F4F6; padding: 0.125rem 0.25rem; border-radius: 3px; }
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: #4F46E5;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            margin-top: 1rem;
+        }
+        .btn:hover { background: #4338CA; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>StudyNotes AI 📚</h1>
+        <p>An AI-powered notes app for students, built according to the Product & Build Spec.</p>
+
+        <h2>What's Built (v1 Scope)</h2>
+        <div class="feature">✅ <strong>Rich Text Editor</strong> - Bold, italic, underline, headings, lists, code blocks, highlighting</div>
+        <div class="feature">✅ <strong>Local-First Storage</strong> - All data stored in IndexedDB, works offline</div>
+        <div class="feature">✅ <strong>PWA Support</strong> - Installable, works offline with service worker</div>
+        <div class="feature">✅ <strong>AI Transformation</strong> - "Clean this up" feature with multilingual support</div>
+        <div class="feature">✅ <strong>Course Organization</strong> - Group notes by course/subject</div>
+        <div class="feature">✅ <strong>Markdown Export</strong> - One-click export all notes as Markdown</div>
+        <div class="feature">✅ <strong>Usage Tracking</strong> - Silent logging of AI calls for future pricing decisions</div>
+
+        <h2>How to Use</h2>
+        <ol style="margin-left: 2rem; margin-top: 1rem;">
+            <li>Open <code>index.html</code> in a modern browser</li>
+            <li>Create a course (e.g., "Biology 101")</li>
+            <li>Start typing your lecture notes</li>
+            <li>Click "Clean this up" to transform your notes with AI</li>
+            <li>Toggle between Raw and Clean views</li>
+        </ol>
+
+        <h2>Architecture Principles</h2>
+        <ul style="margin-left: 2rem; margin-top: 1rem;">
+            <li><strong>Local-first</strong>: Browser (IndexedDB) is source of truth</li>
+            <li><strong>Offline-capable</strong>: Works without internet via PWA</li>
+            <li><strong>Plain-text-adjacent</strong>: Export to Markdown with zero data loss</li>
+            <li><strong>Never lose content</strong>: Raw notes always preserved</li>
+        </ul>
+
+        <h2>Files to Open</h2>
+        <p>Open <code>index.html</code> in your browser to use the app.</p>
+
+        <a href="index.html" class="btn">Launch App →</a>
+    </div>
+
+    <div class="card">
+        <h2>Technical Notes</h2>
+        <p><strong>AI API Integration</strong>: The app currently uses a placeholder URL. Replace <code>AI_API_URL</code> in <code>src/utils/ai-service.js</code> with your preferred AI service endpoint.</p>
+        <p><strong>Service Worker</strong>: Requires HTTPS or localhost. Use a local server like <code>python -m http.server 8000</code> or <code>npx serve .</code></p>
+        <p><strong>Browser Support</strong>: Chrome, Firefox, Edge, Safari (all modern versions)</p>
+    </div>
+</body>
+</html>

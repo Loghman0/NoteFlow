@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="AI-powered notes app for students - transform messy lecture notes into clean, study-ready notes">
+    <meta name="theme-color" content="#4338CA">
+    <title>NoteFlow</title>
+    <!-- FIX (S2): defense-in-depth alongside the B7 sanitizer fix. Scripts
+         and styles are restricted to same-origin (plus Google Fonts, added
+         for the new typography system); the AI provider's API is the only
+         allowed fetch/XHR target; no inline scripts, no framing. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.perplexity.ai; frame-ancestors 'none'; base-uri 'self'; form-action 'none'">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="src/styles/main.css">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+</head>
+<body>
+    <div id="app">
+        <header class="app-header">
+            <div style="display:flex; align-items:center; gap: 4px;">
+                <!-- Mobile-only sidebar toggle; hidden on desktop via CSS -->
+                <button id="btn-sidebar-toggle" class="icon-btn sidebar-toggle" aria-label="Toggle notes list" aria-expanded="false">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 5.5h14M3 10h14M3 14.5h14"/></svg>
+                </button>
+                <div class="brand">
+                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                        <rect x="2" y="2" width="18" height="18" rx="5" fill="currentColor"/>
+                        <rect x="6.5" y="6.5" width="9" height="1.8" rx="0.9" fill="white"/>
+                        <rect x="6.5" y="10.1" width="9" height="1.8" rx="0.9" fill="white" opacity="0.65"/>
+                        <rect x="6.5" y="13.7" width="5.5" height="1.8" rx="0.9" fill="white" opacity="0.65"/>
+                    </svg>
+                    <span class="brand-text">NoteFlow</span>
+                </div>
+            </div>
+            <nav class="main-nav">
+                <button id="btn-new-note" class="nav-btn" aria-label="New note">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+                    <span class="btn-label">New note</span>
+                </button>
+                <button id="btn-export" class="nav-btn" aria-label="Export all notes">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8m0 0L5 7.2M8 10l3-2.8M3 11.5v1.8a1 1 0 001 1h8a1 1 0 001-1v-1.8"/></svg>
+                    <span class="btn-label">Export</span>
+                </button>
+                <button id="btn-trash" class="nav-btn" aria-label="View trash">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5h10M6.5 4.5V3a1 1 0 011-1h1a1 1 0 011 1v1.5M4.5 4.5l.6 8.4a1 1 0 001 .9h3.8a1 1 0 001-.9l.6-8.4"/></svg>
+                    <span class="btn-label">Trash</span>
+                </button>
+            </nav>
+        </header>
+
+        <main class="app-main">
+            <!-- Scrim behind the sidebar on mobile when it's open as an off-canvas panel -->
+            <div id="sidebar-scrim" class="sidebar-scrim"></div>
+
+            <aside class="sidebar" id="sidebar">
+                <div class="search-section">
+                    <div class="search-field">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.5"/><path d="M13 13l-2.6-2.6" stroke-linecap="round"/></svg>
+                        <input type="search" id="note-search" class="search-input" placeholder="Search notes…" aria-label="Search notes">
+                    </div>
+                </div>
+
+                <div class="sidebar-scroll">
+                    <div class="course-section">
+                        <div class="sidebar-heading">Courses</div>
+                        <div id="course-list"></div>
+                        <button id="btn-add-course" class="add-course-trigger">
+                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M7 2.5v9M2.5 7h9"/></svg>
+                            Add course
+                        </button>
+                    </div>
+
+                    <div class="notes-section">
+                        <div class="sidebar-heading" id="notes-section-heading">Notes</div>
+                        <div id="notes-list"></div>
+                    </div>
+                </div>
+            </aside>
+
+            <section class="editor-section" id="editor-section">
+                <div class="editor-header">
+                    <input type="text" id="note-title" class="note-title-input" placeholder="Untitled Note">
+                    <select id="note-course" class="course-select">
+                        <option value="">No course</option>
+                    </select>
+                    <span id="save-status" class="save-status" aria-live="polite"><span class="status-dot"></span><span class="status-text"></span></span>
+                    <div class="editor-actions">
+                        <button id="btn-clean-notes" class="action-btn primary">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5l1 2.4 2.4 1-2.4 1-1 2.4-1-2.4-2.4-1 2.4-1 1-2.4z"/><path d="M12.5 9.5l.5 1.2 1.2.5-1.2.5-.5 1.2-.5-1.2-1.2-.5 1.2-.5.5-1.2z"/></svg>
+                            <span class="btn-label">Clean this up</span>
+                        </button>
+                        <button id="btn-cancel-clean" class="action-btn danger hidden">
+                            <span class="btn-label">Cancel</span>
+                        </button>
+                        <button id="btn-toggle-view" class="action-btn subtle">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8c1.5-3 4-4.5 6-4.5S12.5 5 14 8c-1.5 3-4 4.5-6 4.5S3.5 11 2 8z"/><circle cx="8" cy="8" r="1.6"/></svg>
+                            <span class="btn-label" id="toggle-view-label">View clean</span>
+                        </button>
+                        <button id="btn-delete-note" class="action-btn subtle" aria-label="Move note to trash">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5h10M6.5 4.5V3a1 1 0 011-1h1a1 1 0 011 1v1.5M4.5 4.5l.6 8.4a1 1 0 001 .9h3.8a1 1 0 001-.9l.6-8.4"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="editor-container">
+                    <div id="editor" class="rich-text-editor" contenteditable="true" data-placeholder="Start typing your notes here…">
+                        <p></p>
+                    </div>
+                    <div id="clean-view" class="clean-view hidden">
+                        <div class="clean-view-banner">
+                            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5l1 2.4 2.4 1-2.4 1-1 2.4-1-2.4-2.4-1 2.4-1 1-2.4z"/></svg>
+                            AI-cleaned version — your original is preserved
+                        </div>
+                        <div id="clean-content"></div>
+                    </div>
+                </div>
+
+                <div class="editor-toolbar">
+                    <div class="toolbar-group">
+                        <button class="toolbar-btn" data-command="bold" aria-label="Bold" title="Bold">
+                            <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M4 3h4.2a2.6 2.6 0 011.5 4.7A2.8 2.8 0 018.5 13H4V3zm2 1.7v2.9h2.1a1.45 1.45 0 000-2.9H6zm0 4.6v3h2.3a1.5 1.5 0 000-3H6z"/></svg>
+                        </button>
+                        <button class="toolbar-btn" data-command="italic" aria-label="Italic" title="Italic">
+                            <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M6.5 3h5v1.5h-1.6l-2 7h1.6V13h-5v-1.5h1.6l2-7H6.5V3z"/></svg>
+                        </button>
+                        <button class="toolbar-btn" data-command="underline" aria-label="Underline" title="Underline">
+                            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 3v4.5a4 4 0 008 0V3M3.5 13h9"/></svg>
+                        </button>
+                    </div>
+                    <div class="toolbar-group">
+                        <button class="toolbar-btn" data-command="formatBlock" data-value="h2" aria-label="Heading 2" title="Heading 2">H2</button>
+                        <button class="toolbar-btn" data-command="formatBlock" data-value="h3" aria-label="Heading 3" title="Heading 3">H3</button>
+                    </div>
+                    <div class="toolbar-group">
+                        <button class="toolbar-btn" data-command="insertUnorderedList" aria-label="Bulleted list" title="Bulleted list">
+                            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="3" cy="4" r="0.9" fill="currentColor" stroke="none"/><circle cx="3" cy="8" r="0.9" fill="currentColor" stroke="none"/><circle cx="3" cy="12" r="0.9" fill="currentColor" stroke="none"/><path d="M6.5 4h7M6.5 8h7M6.5 12h7"/></svg>
+                        </button>
+                        <button class="toolbar-btn" data-command="insertOrderedList" aria-label="Numbered list" title="Numbered list">
+                            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 4h7M6.5 8h7M6.5 12h7"/><text x="1.3" y="5.3" font-size="4.5" fill="currentColor" stroke="none" font-family="sans-serif">1</text><text x="1.3" y="9.3" font-size="4.5" fill="currentColor" stroke="none" font-family="sans-serif">2</text><text x="1.3" y="13.3" font-size="4.5" fill="currentColor" stroke="none" font-family="sans-serif">3</text></svg>
+                        </button>
+                        <button class="toolbar-btn" data-command="formatBlock" data-value="pre" aria-label="Code block" title="Code block">
+                            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 5L2.5 8l3 3M10.5 5l3 3-3 3"/></svg>
+                        </button>
+                    </div>
+                    <div class="toolbar-group">
+                        <button class="toolbar-btn highlight-btn" data-command="highlight" data-color="#FDF0B8" aria-label="Highlight yellow" title="Highlight yellow">
+                            <span class="highlight-swatch" style="background:#FDF0B8;"></span>
+                        </button>
+                        <button class="toolbar-btn highlight-btn" data-command="highlight" data-color="#D4EDDD" aria-label="Highlight green" title="Highlight green">
+                            <span class="highlight-swatch" style="background:#D4EDDD;"></span>
+                        </button>
+                        <button class="toolbar-btn highlight-btn" data-command="highlight" data-color="#D9E6F7" aria-label="Highlight blue" title="Highlight blue">
+                            <span class="highlight-swatch" style="background:#D9E6F7;"></span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Trash: a slide-over side panel, not a modal dialog box -->
+        <div id="trash-panel" class="trash-overlay hidden">
+            <div class="trash-panel" role="dialog" aria-label="Trash">
+                <div class="trash-panel-header">
+                    <h2>Trash</h2>
+                    <button id="btn-close-trash" class="icon-btn" aria-label="Close trash">
+                        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+                    </button>
+                </div>
+                <p class="trash-hint">Notes here can be restored or permanently deleted.</p>
+                <div id="trash-list" class="trash-list"></div>
+            </div>
+        </div>
+
+        <!-- Popover mount point: course add/rename and the AI API key prompt
+             render here instead of using window.prompt(). -->
+        <div id="popover-root"></div>
+
+        <!-- Toast notifications: replaces alert() for AI results/errors and
+             gives non-destructive actions (like "Move to trash") an inline
+             Undo instead of a blocking confirm(). -->
+        <div id="toast-region" class="toast-region" aria-live="polite"></div>
+    </div>
+
+    <script type="module" src="src/main.js"></script>
+</body>
+</html>
